@@ -35,6 +35,7 @@ function deploy_model() {
     header "Deploying model into ModelMesh"
     oc new-project $MM_NAMESPACE || true
     os::cmd::expect_success "oc project $MM_NAMESPACE"
+    os::cmd::expect_success "oc apply -f ${RESOURCEDIR}/modelmesh/service_account.yaml -n ${MM_NAMESPACE}"
     oc label namespace $MM_NAMESPACE "modelmesh-enabled=true" --overwrite=true || echo "Failed to apply modelmesh-enabled label."
     os::cmd::expect_success "oc apply -f ${RESOURCEDIR}/trustyai/secret.yaml -n ${MM_NAMESPACE}"
     os::cmd::expect_success "oc apply -f ${RESOURCEDIR}/trustyai/odh-mlserver-0.x.yaml  -n ${MM_NAMESPACE}"
@@ -46,8 +47,9 @@ function check_mm_resources() {
   oc project $MM_NAMESPACE
   os::cmd::try_until_text "oc get route example-sklearn-isvc" "example-sklearn-isvc" $odhdefaulttimeout $odhdefaultinterval
   INFER_ROUTE=$(oc get route example-sklearn-isvc --template={{.spec.host}}{{.spec.path}})
+  token=$(oc create token user-one -n ${MODEL_PROJECT})
   os::cmd::try_until_text "oc get pod | grep modelmesh-serving" "5/5" $odhdefaulttimeout $odhdefaultinterval
-  os::cmd::try_until_text "curl -k https://$INFER_ROUTE/infer -d @${RESOURCEDIR}/trustyai/data.json -H 'Authorization: Bearer $TESTUSER_BEARER_TOKEN' -i" "example-sklearn-isvc"
+  os::cmd::try_until_text "curl -k https://$INFER_ROUTE/infer -d @${RESOURCEDIR}/trustyai/data.json -H 'Authorization: Bearer $token' -i" "model_name"
 }
 
 function check_communication(){
@@ -55,7 +57,7 @@ function check_communication(){
     oc project $MM_NAMESPACE
 
     # send some data to modelmesh
-    os::cmd::expect_success_and_text "curl -k https://$INFER_ROUTE/infer -d @${RESOURCEDIR}/trustyai/data.json -H 'Authorization: Bearer $TESTUSER_BEARER_TOKEN' -i" "model_name"
+    os::cmd::expect_success_and_text "curl -k https://$INFER_ROUTE/infer -d @${RESOURCEDIR}/trustyai/data.json -H 'Authorization: Bearer $token' -i" "model_name"
     oc project ${ODHPROJECT}
     os::cmd::try_until_text "oc logs $(oc get pods -o name | grep trustyai-service)" "Received partial input payload" $odhdefaulttimeout $odhdefaultinterval
 }
@@ -69,7 +71,7 @@ function generate_data(){
     for i in {1..500};
     do
       DATA=$(sed "s/\[40.83, 3.5, 0.5, 0\]/\[$(($RANDOM % 2)),$(($RANDOM / 128)),$(($RANDOM / 128)), $(($RANDOM / 128)) \]/" ${RESOURCEDIR}/trustyai/data.json)
-      curl -k https://$INFER_ROUTE/infer -d "$DATA"  -H 'Authorization: Bearer '$TESTUSER_BEARER_TOKEN -i >/dev/null 2>&1
+      os::cmd::expect_success "curl -k https://$INFER_ROUTE/infer -d "$DATA"  -H 'Authorization: Bearer $token' -i >/dev/null 2>&1"
     done
 }
 
