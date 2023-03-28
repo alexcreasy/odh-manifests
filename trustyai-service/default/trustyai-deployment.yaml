@@ -10,6 +10,7 @@ metadata:
     prometheus.io/path: /q/metrics
     prometheus.io/port: "8080"
     prometheus.io/scheme: http
+    service.alpha.openshift.io/serving-cert-secret-name: trustyai-service-proxy-tls
   labels:
     app.kubernetes.io/name: trustyai-service
     app.kubernetes.io/version: 0.1.0
@@ -148,11 +149,13 @@ spec:
               name: volume
               readOnly: false
       serviceAccountName: trustyai-serviceaccount
+
       volumes:
         - name: volume
           persistentVolumeClaim:
             claimName: trustyai-service-pvc
             readOnly: false
+
 ---
 apiVersion: v1
 kind: ServiceAccount

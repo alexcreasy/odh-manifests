@@ -9,4 +9,3 @@ resources:
 - trustyai-configmap.yaml
 - route.yaml
 - pvc.yaml
-- secret.yaml
