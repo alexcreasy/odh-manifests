@@ -47,7 +47,7 @@ function check_mm_resources() {
   oc project $MM_NAMESPACE
   os::cmd::try_until_text "oc get route example-sklearn-isvc" "example-sklearn-isvc" $odhdefaulttimeout $odhdefaultinterval
   INFER_ROUTE=$(oc get route example-sklearn-isvc --template={{.spec.host}}{{.spec.path}})
-  token=$(oc create token user-one -n ${MODEL_PROJECT})
+  token=$(oc create token user-one -n ${MM_NAMESPACE})
   os::cmd::try_until_text "oc get pod | grep modelmesh-serving" "5/5" $odhdefaulttimeout $odhdefaultinterval
   os::cmd::try_until_text "curl -k https://$INFER_ROUTE/infer -d @${RESOURCEDIR}/trustyai/data.json -H 'Authorization: Bearer $token' -i" "model_name"
 }
