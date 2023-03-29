@@ -6,11 +6,11 @@ metadata:
     modelmesh-service: modelmesh-serving
 spec:
   endpoints:
-    - interval: 3s
+    - interval: 4s
       path: /q/metrics
       honorLabels: true
       honorTimestamps: true
-      scrapeTimeout: 10s
+      scrapeTimeout: 3s
       bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
       bearerTokenSecret:
         key: ""
